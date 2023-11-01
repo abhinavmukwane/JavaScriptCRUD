@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add Name and Age</title>
+    <!-- Add Bootstrap CSS and JavaScript -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10.10.2/dist/sweetalert2.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .input-group button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        h2 {
+            margin-top: 30px;
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .update-button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Enter Name and Age</h1>
+        <div class="input-group">
+            <input type="text" id="nameInput" placeholder="Name" oninput="validateNameInput(this)">
+            <input type="number" id="ageInput" placeholder="Age">
+            <button onclick="addData()" class="btn">Save</button>
+        </div>
+
+        <h2>Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sr. No</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th colspan="2">Action</th>
+                </tr>
+            </thead>
+            <tbody id="dataBody">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap Modal -->
+    <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateModalLabel">Update Data</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="updateName" placeholder="Name" oninput="validateNameInput(this)">
+                    <input type="number" id="updateAge" placeholder="Age">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateButton" onclick="updateData()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var serialNumber = 1;
+
+        // Load data from local storage when the page loads
+        window.onload = function () {
+            var savedData = JSON.parse(localStorage.getItem("data"));
+            if (savedData) {
+                for (var i = 0; i < savedData.length; i++) {
+                    addRow(savedData[i].name, savedData[i].age);
+                }
+            }
+        };
+
+        function addData() {
+            var name = document.getElementById("nameInput").value;
+            var age = document.getElementById("ageInput").value;
+
+            if (name.trim() === "" || age.trim() === "") {
+                showErrorMessage("Please enter both name and age.");
+                return;
+            }
+
+            if (isNaN(age) || age < 1 || age > 100) {
+                document.getElementById("ageInput").value = "";
+                showErrorMessage("Age must be between 1 and 100");
+                return;
+            }
+
+            addRow(name, age);
+            saveDataToLocalStorage(name, age);
+
+            // Clear the input fields
+            document.getElementById("nameInput").value = "";
+            document.getElementById("ageInput").value = "";
+
+            showSuccessMessage("Data added successfully!");
+        }
+
+        function addRow(name, age) {
+            var table = document.getElementById("dataBody");
+            var newRow = table.insertRow(table.rows.length);
+            var cell1 = newRow.insertCell(0);
+            var cell2 = newRow.insertCell(1);
+            var cell3 = newRow.insertCell(2);
+            var cell4 = newRow.insertCell(3);
+            var cell5 = newRow.insertCell(4);
+
+            cell1.innerHTML = serialNumber++;
+            cell2.innerHTML = name;
+            cell3.innerHTML = age;
+
+            // Create a delete button and attach a click event handler to it
+            var deleteButton = document.createElement("button");
+            deleteButton.innerHTML = "Delete";
+            deleteButton.className = "delete-button";
+            deleteButton.onclick = function () {
+                deleteRow(newRow);
+            };
+            cell4.appendChild(deleteButton);
+
+            // Create an update button and attach a click event handler to it
+            var updateButton = document.createElement("button");
+            updateButton.innerHTML = "Update";
+            updateButton.className = "update-button";
+            updateButton.dataset.rowIndex = serialNumber - 2; // Store the row index
+            updateButton.addEventListener("click", function () {
+                var rowIndex = this.dataset.rowIndex;
+                var row = document.getElementById("dataBody").rows[rowIndex];
+                var name = row.cells[1].innerHTML;
+                var age = row.cells[2].innerHTML;
+
+                document.getElementById("updateName").value = name;
+                document.getElementById("updateAge").value = age;
+
+                // Store the row index in the modal's "Update" button
+                document.getElementById("updateButton").dataset.rowIndex = rowIndex;
+            });
+            updateButton.setAttribute("data-toggle", "modal");
+            updateButton.setAttribute("data-target", "#updateModal");
+            cell5.appendChild(updateButton);
+
+        }
+
+        function saveDataToLocalStorage(name, age) {
+            var savedData = JSON.parse(localStorage.getItem("data")) || [];
+            savedData.push({ name: name, age: age });
+            localStorage.setItem("data", JSON.stringify(savedData));
+        }
+
+        function deleteRow(row) {
+            var table = document.getElementById("dataBody");
+            var index = row.rowIndex - 1;
+            table.deleteRow(index);
+
+            var savedData = JSON.parse(localStorage.getItem("data"));
+            savedData.splice(index, 1);
+            localStorage.setItem("data", JSON.stringify(savedData));
+
+            // Display a success message using SweetAlert
+            showSuccessMessage("Data deleted successfully!");
+        }
+
+        // JavaScript for updating data with a popup modal
+        function updateData() {
+            var rowIndex = document.getElementById("updateButton").dataset.rowIndex;
+            var row = document.getElementById("dataBody").rows[rowIndex];
+            var name = document.getElementById("updateName").value;
+            var age = document.getElementById("updateAge").value;
+
+            if (name.trim() === "" || age.trim() === "") {
+                showErrorMessage("Please enter both name and age.");
+                return;
+            }
+
+            if (isNaN(age) || age < 1 || age > 100) {
+                document.getElementById("ageInput").value = "";
+                showErrorMessage("Age must be between 1 and 100");
+                return;
+            }
+
+            row.cells[1].innerHTML = name;
+            row.cells[2].innerHTML = age;
+
+            var savedData = JSON.parse(localStorage.getItem("data"));
+            savedData[rowIndex] = { name: name, age: age };
+            localStorage.setItem("data", JSON.stringify(savedData));
+
+            // Close the modal
+            $('#updateModal').modal('hide');
+            showSuccessMessage("Data added successfully!");
+        }
+
+        // Function to display a success message using SweetAlert
+        function showSuccessMessage(message) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message,
+            });
+        }
+
+        // Function to display an error message using SweetAlert
+        function showErrorMessage(message) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+            });
+        }
+
+        function validateNameInput(input) {
+            input.value = input.value.replace(/[^A-Za-z]/g, '');
+        }
+
+    </script>
+
+    <!-- Add Bootstrap JavaScript library -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.10.2/dist/sweetalert2.min.js"></script>
+</body>
+
+</html>
