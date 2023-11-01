@@ -295,7 +295,7 @@
         }
 
         function validateNameInput(input) {
-            input.value = input.value.replace(/[^A-Za-z]/g, '');
+           input.value = input.value.replace(/[^A-Za-z\s]/g, '');
         }
 
     </script>
